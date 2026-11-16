@@ -85,7 +85,7 @@ Deno.serve(async (req) => {
   const { data: { user } } = await db.auth.getUser(token);
   if (!user?.email || !user.email_confirmed_at) return json({ error: "sign_in" }, 401);
   const me = user.email.toLowerCase();
-  const { data: adm } = await db.from("admins").select("email").eq("email", me).maybeSingle();
+  const { data: adm } = await db.from("admins").select("email,role").eq("email", me).maybeSingle();
   if (!adm) return json({ error: "not_admin" }, 403);
   // admins must finish a second step (authenticator app code) for this session; getUser above verified the token
   let aal = "";
@@ -93,13 +93,62 @@ Deno.serve(async (req) => {
   if (aal !== "aal2") return json({ error: "mfa_required" }, 401);
 
   const b = await req.json().catch(() => ({}));
-  const log = (action: string, detail: unknown) => db.from("admin_log").insert({ admin: me, action, detail });
+  // Roles (admins.role). Owner: everything. Admin: everything but the team. Support: people, support,
+  // reports and corrections. Marketing: marketing and sign-ups. Read only: looks, changes nothing.
+  const role: string = adm.role || "owner";
+  const READS = ["me", "overview", "users", "reports", "support", "corrections", "signups", "emails", "settings", "roadmap", "marketing"];
+  const CAN: Record<string, string[]> = {
+    owner: ["*"],
+    admin: ["*", "-admin_add", "-admin_remove", "-admin_role"],
+    support: [...READS, "user_reset", "report_update", "support_reply", "support_update", "correction_add"],
+    marketing: [...READS, "import_spend", "campaign_save"],
+    readonly: READS,
+  };
+  const allowed = (a: string) => { const c = CAN[role] || []; return !c.includes("-" + a) && (c.includes("*") || c.includes(a)); };
+  if (!allowed(String(b.action || ""))) return json({ error: "Your role can't do that." }, 403);
+  const log = (action: string, detail: unknown, extra: { before?: unknown; after?: unknown; reason?: string } = {}) =>
+    db.from("admin_log").insert({ admin: me, admin_id: user.id, action, detail, before: extra.before ?? null, after: extra.after ?? detail ?? null, reason: extra.reason ?? null });
   const one = async (q: any) => { const { data, error } = await q; if (error) throw new Error(error.message); return data; };
 
   try {
     switch (b.action) {
       case "me":
-        return json({ email: me });
+        return json({ email: me, role });
+
+      case "marketing":
+        return json(await one(db.rpc("admin_marketing", { p_days: Math.max(1, Math.min(730, Number(b.days) || 30)) })));
+
+      case "import_spend": {
+        const rows = Array.isArray(b.rows) ? b.rows.slice(0, 5000) : [];
+        if (!rows.length) return json({ error: "No rows to import." }, 400);
+        const n = await one(db.rpc("admin_import_spend", { p_rows: rows }));
+        const total = rows.reduce((a: number, r: any) => a + (Number(r.spend) || 0), 0);
+        await log("spend_import", { rows: n, total_spend: total });
+        return json({ ok: true, rows: n, total });
+      }
+
+      case "campaign_save": {
+        const name = String(b.name || "").trim().slice(0, 200);
+        if (!name) return json({ error: "Give the campaign a name." }, 400);
+        const cents = (v: unknown) => { const x = String(v ?? "").replace(/[$,\s]/g, ""); return x ? Math.round(Number(x) * 100) : null; };
+        const row = { name, channel: "paid", platform: String(b.platform || "") || null, utm_campaign: String(b.utm_campaign || "").trim() || null,
+          budget_cents: cents(b.budget), target_cac_cents: cents(b.target_cac), start_date: b.start_date || null, end_date: b.end_date || null, status: "active" };
+        await one(db.from("campaigns").insert(row));
+        await log("campaign_add", row);
+        return json({ ok: true });
+      }
+
+      case "admin_role": {
+        const email = String(b.email || "").toLowerCase();
+        const r = String(b.role || "");
+        if (!["owner", "admin", "support", "marketing", "readonly"].includes(r)) return json({ error: "Unknown role." }, 400);
+        if (email === me) return json({ error: "You can't change your own role." }, 400);
+        const { data: was } = await db.from("admins").select("role").eq("email", email).maybeSingle();
+        if (!was) return json({ error: "Not an admin." }, 404);
+        await one(db.from("admins").update({ role: r }).eq("email", email));
+        await log("admin_role", { email, role: r }, { before: { role: was.role }, after: { role: r } });
+        return json({ ok: true });
+      }
 
       case "overview": {
         const [stats, rev, runs] = await Promise.all([
@@ -123,7 +172,7 @@ Deno.serve(async (req) => {
         if (sub?.stripe_sub && ["active", "trialing", "past_due"].includes(sub.status)) return json({ error: "This person already pays through Stripe." }, 400);
         const end = new Date(Date.now() + months * 30.4 * 864e5).toISOString();
         await one(db.from("subscriptions").upsert({ user_id: b.user_id, status: "active", plan: "comp", source: "comp", period_end: end, updated_at: new Date().toISOString() }));
-        await log("comp_pro", { user_id: b.user_id, months, until: end });
+        await log("comp_pro", { user_id: b.user_id, months, until: end }, { before: sub ?? null, after: { status: "active", plan: "comp", period_end: end } });
         return json({ ok: true, until: end });
       }
 
@@ -277,8 +326,9 @@ Deno.serve(async (req) => {
       case "admin_add": {
         const email = String(b.email || "").trim().toLowerCase();
         if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return json({ error: "Enter a valid email." }, 400);
-        await one(db.from("admins").upsert({ email }));
-        await log("admin_add", { email });
+        const r = ["owner", "admin", "support", "marketing", "readonly"].includes(b.role) ? b.role : "support";
+        await one(db.from("admins").upsert({ email, role: r }));
+        await log("admin_add", { email, role: r });
         return json({ ok: true });
       }
 
