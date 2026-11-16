@@ -9,6 +9,10 @@ function loadSupabaseLib(){
   if(window.supabase)return Promise.resolve();
   return new Promise((ok,fail)=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js';s.onload=ok;s.onerror=fail;document.head.appendChild(s)});
 }
+/* first touch: where this visitor first came from (see apps/site/pages/_document.tsx), sent once after sign-in */
+(function(){try{var C='cr_ft',d=document;if(d.cookie.split('; ').some(function(c){return c.indexOf(C+'=')===0}))return;var u=new URL(location.href);if(/^admin\./.test(u.hostname))return;var t={},k,v,ids={};['utm_source','utm_medium','utm_campaign','utm_content','utm_term'].forEach(function(k){var v=u.searchParams.get(k);if(v)t[k]=v.slice(0,200)});['gclid','fbclid','ttclid','msclkid','gbraid','wbraid'].forEach(function(k){var v=u.searchParams.get(k);if(v)ids[k]=v.slice(0,200)});if(Object.keys(ids).length)t.click_ids=ids;var own=/(^|\.)capitolreceipts\.com$/i;if(d.referrer&&!own.test(new URL(d.referrer).hostname))t.referrer=d.referrer.slice(0,500);t.landing_page=(u.pathname+u.search).slice(0,500);t.at=new Date().toISOString();d.cookie=C+'='+encodeURIComponent(JSON.stringify(t))+'; max-age=7776000; path=/; samesite=lax'+(own.test(u.hostname)?'; domain=.capitolreceipts.com':'')+(u.protocol==='https:'?'; secure':'')}catch(e){}})();
+function acctSendTouch(){try{if(localStorage.getItem('cr.attributed')||!ACCT.client)return;const raw=document.cookie.split('; ').find(c=>c.indexOf('cr_ft=')===0);let p={landing_page:null};try{if(raw)p=JSON.parse(decodeURIComponent(raw.slice(6)))}catch(e){}
+  ACCT.client.rpc('record_attribution',{p}).then(({error})=>{if(!error)try{localStorage.setItem('cr.attributed','1')}catch(e){}})}catch(e){}}
 async function acctInit(){
   try{await loadSupabaseLib()}catch(e){console.warn('Sign-in unavailable',e);ACCT.ready=true;return}
   ACCT.client=window.supabase.createClient(SB.url,SB.key,{auth:{persistSession:true,autoRefreshToken:true,storageKey:'cr_auth',detectSessionInUrl:true}});
@@ -23,6 +27,7 @@ async function acctInit(){
 async function acctSet(u){
   ACCT.user=u;
   if(!u){S.following=new Set();render();return}
+  acctSendTouch();
   let row=null;
   try{const r=await ACCT.client.from('user_prefs').select('zip,home,dist,following').eq('user_id',u.id).maybeSingle();row=r.data}catch(e){console.warn(e)}
   const localFollow=store.get('following',[]);
