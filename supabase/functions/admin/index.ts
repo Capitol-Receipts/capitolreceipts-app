@@ -87,10 +87,6 @@ Deno.serve(async (req) => {
   const me = user.email.toLowerCase();
   const { data: adm } = await db.from("admins").select("email,role").eq("email", me).maybeSingle();
   if (!adm) return json({ error: "not_admin" }, 403);
-  // admins must finish a second step (authenticator app code) for this session; getUser above verified the token
-  let aal = "";
-  try { aal = JSON.parse(atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"))).aal || ""; } catch { /* treated as no MFA */ }
-  if (aal !== "aal2") return json({ error: "mfa_required" }, 401);
 
   const b = await req.json().catch(() => ({}));
   // Roles (admins.role). Owner: everything. Admin: everything but the team. Support: people, support,
@@ -291,7 +287,7 @@ Deno.serve(async (req) => {
 
       case "roadmap": {
         // tick off what can be checked automatically, then return the whole list
-        const sync = await syncRoadmap(db, true).catch(() => ({ checked: 0, changed: 0 }));
+        const sync = await syncRoadmap(db).catch(() => ({ checked: 0, changed: 0 }));
         const items = await one(db.from("roadmap_items").select("*").order("sort").order("created_at"));
         return json({ items, sync });
       }
