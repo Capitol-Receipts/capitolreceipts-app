@@ -31,6 +31,8 @@ authSheet=function(mode,reason){
 };
 const rnd=()=>{const a=new Uint8Array(32);crypto.getRandomValues(a);return [...a].map(b=>b.toString(16).padStart(2,'0')).join('')};
 const sha256=async s=>[...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s)))].map(b=>b.toString(16).padStart(2,'0')).join('');
+// a token that carries no nonce claim (Google in the Expo app) is sent without one
+const tokenHasNonce=t=>{try{return !!JSON.parse(atob(t.split('.')[1].replace(/-/g,'+').replace(/_/g,'/'))).nonce}catch(e){return true}};
 async function socNativeLogin(provider){
   const SL=plug('SocialLogin');if(!SL)throw new Error('unavailable');
   if(!SOC.inited&&typeof ANDROID!=='undefined'&&ANDROID){await SL.initialize({google:{webClientId:GOOGLE_WEB_CLIENT_ID,mode:'online'}});SOC.inited=true}
@@ -39,7 +41,7 @@ async function socNativeLogin(provider){
   const r=await SL.login({provider,options:provider==='apple'?{scopes:['email','name'],nonce:hashed}:{scopes:['email','profile'],nonce:hashed}});
   const res=r&&r.result||{};
   const token=res.idToken;if(!token)throw new Error('no token');
-  const {error}=await ACCT.client.auth.signInWithIdToken({provider,token,nonce:raw});
+  const {error}=await ACCT.client.auth.signInWithIdToken({provider,token,...(tokenHasNonce(token)?{nonce:raw}:{})});
   if(error)throw error;
   // Apple shares a name only the first time; keep it on the account
   const nm=res.profile&&[res.profile.givenName,res.profile.familyName].filter(Boolean).join(' ');

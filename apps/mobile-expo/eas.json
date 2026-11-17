@@ -1,0 +1,10 @@
+{
+  "cli": { "version": ">= 16.0.0", "appVersionSource": "remote" },
+  "build": {
+    "production": {
+      "autoIncrement": true,
+      "env": { "EXPO_PUBLIC_RC_IOS_KEY": "", "EXPO_PUBLIC_WEB_URL": "https://app.capitolreceipts.com/?src=app" }
+    }
+  },
+  "submit": { "production": { "ios": {} } }
+}

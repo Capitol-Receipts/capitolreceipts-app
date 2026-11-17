@@ -7,7 +7,7 @@ Everywhere (web and app): "Delete my account" in Account, which removes the acco
 const NATIVE=!!(window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform());
 const plug=n=>{try{return (window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins[n])||(window.Capacitor&&window.Capacitor.registerPlugin&&window.Capacitor.registerPlugin(n))}catch(e){return null}};
 // RevenueCat public iOS SDK key (safe to ship in an app; it can only read and buy for the signed-in user). Set when the RevenueCat project exists.
-const RC_IOS_KEY='';
+const RC_IOS_KEY=window.__CR_RC_KEY||''; // the Expo app injects it; the Capacitor shell can set it here
 // RevenueCat public Android SDK key (goog_...). Set when the Google Play app exists in RevenueCat.
 const RC_ANDROID_KEY='';
 const PLAT=NATIVE&&window.Capacitor.getPlatform?window.Capacitor.getPlatform():'web',ANDROID=PLAT==='android';

@@ -1,0 +1,35 @@
+{
+  "expo": {
+    "name": "Capitol Receipts",
+    "slug": "capitol-receipts",
+    "scheme": "capitolreceipts",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./icon.png",
+    "userInterfaceStyle": "automatic",
+    "backgroundColor": "#14274e",
+    "newArchEnabled": true,
+    "ios": {
+      "bundleIdentifier": "com.capitolreceipts.app",
+      "supportsTablet": false,
+      "usesAppleSignIn": true,
+      "associatedDomains": ["applinks:app.capitolreceipts.com", "applinks:www.capitolreceipts.com"],
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSFaceIDUsageDescription": "Capitol Receipts uses Face ID to unlock the app when you turn on the app lock.",
+        "UIBackgroundModes": ["remote-notification"]
+      },
+      "entitlements": { "aps-environment": "production" }
+    },
+    "plugins": [
+      ["expo-splash-screen", { "image": "./splash.png", "resizeMode": "contain", "backgroundColor": "#14274e" }],
+      "expo-status-bar",
+      "expo-apple-authentication",
+      ["expo-notifications", { "enableBackgroundRemoteNotifications": true }],
+      ["expo-local-authentication", { "faceIDPermission": "Capitol Receipts uses Face ID to unlock the app when you turn on the app lock." }],
+      ["@react-native-google-signin/google-signin", { "iosUrlScheme": "com.googleusercontent.apps.37666810110-g2jmvu9tfn58qr1hhb448mvghmefce2j" }],
+      ["expo-build-properties", { "ios": { "deploymentTarget": "16.4" } }]
+    ],
+    "extra": { "eas": {} }
+  }
+}
