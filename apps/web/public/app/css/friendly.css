@@ -321,3 +321,16 @@ div.mphoto{cursor:default}
 .phead.lbanner p{color:rgba(255,255,255,.88)}
 .phead.lbanner .pkick{color:rgba(255,255,255,.92)}.phead.lbanner .pkick svg{color:#fff}
 @media (min-width:900px){.phead.lbanner{min-height:230px;padding:30px}}
+
+/* election results */
+.rtag{font-size:12px;font-weight:700;padding:3px 9px;border-radius:999px;background:#eceff4;color:#3a4352}.rtag.p-D{background:#e3ebfa;color:#1d3f91}.rtag.p-R{background:#fbe5e6;color:#a1262e}
+.rval b.p-D{color:var(--D)}.rval b.p-R{color:var(--R)}
+.splitgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.splitcard{background:var(--surface);border:1px solid var(--hair);border-radius:18px;padding:16px 18px}
+.splitk{font-size:13px;font-weight:600;color:var(--soft)}
+.splitbar{display:flex;gap:2px;height:14px;border-radius:7px;overflow:hidden;margin:12px 0 10px;background:#eceff4}
+.splitbar i{display:block;min-width:0}.splitbar .p-D{background:var(--D)}.splitbar .p-R{background:var(--R)}.splitbar .p-O{background:#8b909a}.splitbar .p-N{background:#d9dde5}
+.splitrow{display:flex;gap:16px;flex-wrap:wrap;font-size:14px}.splitrow b{font-size:20px;font-variant-numeric:tabular-nums;margin-right:4px}.splitrow b.p-D{color:var(--D)}.splitrow b.p-R{color:var(--R)}
+.splitsub{margin-top:8px;font-size:13px;color:var(--soft)}
+.mwon{margin-top:6px;display:inline-block;font-size:12.5px;font-weight:700;padding:3px 10px;border-radius:999px;background:var(--pc);color:#fff}
+.mpct{margin-top:6px;font-size:13px;font-weight:600;color:var(--soft)}

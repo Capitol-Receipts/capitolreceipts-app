@@ -71,13 +71,20 @@ def candidates(cell):
         rest = re.sub(r'<ref[^>]*/>', '', m.group(2))
         rest = re.sub(r'<ref[^>]*>.*?</ref>', '', rest, flags=re.S)
         rest = re.sub(r'<ref[^>]*>.*$', '', rest)
+        win = bool(re.search(r'\{\{\s*aye\s*\}\}', rest, re.I))  # Wikipedia marks the winner with a check
         rest = re.sub(r'\{\{[^{}]*\}\}', '', rest).strip()
+        pc = re.search(r'\s(\d{1,3}(?:\.\d+)?)\s?%\s*$', rest)  # vote share, where Wikipedia lists it
+        if pc: rest = rest[:pc.start()].strip()
         pm = TRAIL_PARTY.search(rest)
         party = pm.group(1) if pm else m.group(1)
         nm, wiki = clean_link(rest[:pm.start()] if pm else rest)
         nm = re.sub(r"'{2,}", '', nm)
         nm = nm.replace('★', '').replace('✓', '').strip(" '’")
-        if nm: out.append({'n': nm, 'p': party_of(party + ' ' + m.group(1)), 'pl': party.strip(), 'w': wiki})
+        if nm:
+            c = {'n': nm, 'p': party_of(party + ' ' + m.group(1)), 'pl': party.strip(), 'w': wiki}
+            if win: c['win'] = True
+            if pc: c['pc'] = float(pc.group(1))
+            out.append(c)
     return out
 
 
@@ -98,7 +105,9 @@ def parse_house(t):
         state = parts[i].strip(); st = ST.get(state)
         if not st: continue
         body = parts[i + 1]
-        tb = body[body.find('{|'):body.find('\n|}')]
+        a = [x for x in (body.find('{|'), body.find('{{USCongressElectionTableHead')) if x >= 0]  # Wikipedia now opens each state's table with a template
+        z = body.find('\n|}')
+        tb = body[min(a) if a else 0:z if z >= 0 else len(body)]
         tb = re.sub(r'(\n\|-[^\n]*)+\n', lambda m: '\n' + m.group(0).strip('\n').split('\n')[-1] + '\n', tb)  # collapse doubled row separators
         cur = None
         for row in re.split(r'\n\|-[^\n]*\n', tb):
@@ -255,6 +264,18 @@ def main():
                     c['for'] = round(x['S']); c['vs'] = round(x['O'])
                     for (sid, so), amt in x['by'].items(): spenders[(sid, so, c['n'])] += amt
         race['c'].sort(key=lambda c: (-(c.get('r') or 0)))
+        # the result, where Wikipedia has marked a winner: who, vote share and margin where listed, and whether the seat changed party
+        win = [c for c in race['c'] if c.get('win')]
+        if win:
+            w = win[0]; rest = [c['pc'] for c in race['c'] if c is not w and c.get('pc') is not None]
+            res = {'w': w['n'], 'p': w['p']}
+            if w.get('bg'): res['bg'] = w['bg']
+            if w.get('pc') is not None:
+                res['pc'] = w['pc']
+                if rest: res['m'] = round(w['pc'] - max(rest), 1)
+            prior = race['inc'][0].get('p') if race['inc'] else None
+            if prior in ('D', 'R') and w['p'] in ('D', 'R') and prior != w['p']: res['flip'] = True
+            race['res'] = res
         race['out'] = [[spender_name[sid], sid, so, nm, round(a)] for (sid, so, nm), a in spenders.most_common(12)]
         race['ot'] = round(sum(spenders.values()))
         race['rt'] = sum(c.get('r') or 0 for c in race['c'])
@@ -322,6 +343,7 @@ def main():
     print('outside groups', len(gout), 'top', [(g['n'], g['tot']) for g in gout[:5]])
     json.dump({'asOf': time.strftime('%Y-%m-%d'), 'races': out}, open(os.path.join(OUT, 'races.json'), 'w'), separators=(',', ':'))
     nc = sum(len(r['c']) for r in out); nm = sum(1 for r in out for c in r['c'] if c.get('fec'))
+    print('results marked', sum(1 for r in out if r.get('res')), 'flips', sum(1 for r in out if (r.get('res') or {}).get('flip')))
     print('races', len(out), 'senate', sum(r['o'] == 'S' for r in out), 'house', sum(r['o'] == 'H' for r in out), 'candidates', nc, 'with FEC money', nm,
           'races w/o cands', [r['id'] for r in out if not r['c']][:20])
 

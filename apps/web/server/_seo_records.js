@@ -279,14 +279,16 @@ async function race(id) {
   const groups = d.out || [];
   const name = raceName(d);
   const money2 = cands.filter(c => c.r).map(c => `${c.n} (${c.p}) ${money(c.r)}`).slice(0, 3).join(', ');
-  const lead = `The 2026 ${name}${d.pvi ? ` (partisan lean ${d.pvi})` : ''}: ${cands.length ? cands.slice(0, 4).map(c => `${c.n} (${c.p})`).join(', ') : 'candidates not yet set'}.${money2 ? ` Raised so far: ${money2}.` : ''}${d.ot ? ` Outside groups have spent ${money(d.ot)}.` : ''}`;
-  const t = `2026 ${name.replace(' race', ' Race')}: Candidates & Money`;
+  const rs = d.res, PADJ = { D: 'Democratic', R: 'Republican' };
+  const won = rs ? `${rs.w} (${rs.p}) won${rs.pc != null ? ` with ${rs.pc}%` : ''}${rs.m != null ? `, ${rs.m} points ahead` : ''}${rs.flip ? `, a ${PADJ[rs.p]} gain` : ''}. ` : '';
+  const lead = `${won}The 2026 ${name}${d.pvi ? ` (partisan lean ${d.pvi})` : ''}: ${cands.length ? cands.slice(0, 4).map(c => `${c.n} (${c.p})`).join(', ') : 'candidates not yet set'}.${money2 ? ` Raised so far: ${money2}.` : ''}${d.ot ? ` Outside groups have spent ${money(d.ot)}.` : ''}`;
+  const t = `2026 ${name.replace(' race', ' Race')}: ${rs ? 'Results' : 'Candidates'} & Money`;
   const body = `<h1>2026 ${esc(name)}</h1><p class="sr-sub">${esc(d.status || '')}${d.pvi ? ' · Lean ' + esc(d.pvi) : ''} · Election Nov 3, 2026</p><p class="sr-lead">${esc(lead)}</p>
-${facts([['Raised by candidates', d.rt ? money(d.rt) : null], ['Outside spending', d.ot ? money(d.ot) : null], ['Partisan lean', d.pvi || null]])}
-${sec('Candidates', rows(cands.map(c => [`${c.bg && n[c.bg] ? a(P(n[c.bg].cur ? 'member' : 'past-member', c.bg, c.n), c.n) : esc(c.n)} · ${esc(c.pl || PN[c.p] || c.p || '')}${c.inc ? ' · Incumbent' : ''}`, c.r != null ? `Raised ${money(c.r)}${c.cash != null ? ` · ${money(c.cash)} cash` : ''}` : ''])))}
+${facts([['Winner', rs ? `${rs.w} (${rs.p})${rs.pc != null ? ' · ' + rs.pc + '%' : ''}` : null], ['Margin', rs && rs.m != null ? rs.m + ' points' : null], ['Raised by candidates', d.rt ? money(d.rt) : null], ['Outside spending', d.ot ? money(d.ot) : null], ['Partisan lean', d.pvi || null]])}
+${sec('Candidates', rows(cands.map(c => [`${c.bg && n[c.bg] ? a(P(n[c.bg].cur ? 'member' : 'past-member', c.bg, c.n), c.n) : esc(c.n)} · ${esc(c.pl || PN[c.p] || c.p || '')}${c.inc ? ' · Incumbent' : ''}${c.win ? ' · Won' : ''}${c.pc != null ? ` · ${c.pc}%` : ''}`, c.r != null ? `Raised ${money(c.r)}${c.cash != null ? ` · ${money(c.cash)} cash` : ''}` : ''])))}
 ${sec('Outside groups spending', groups.length ? rows(groups.slice(0, 20).map(g => [`${a(P('outside-group', g[1], g[0]), g[0])} <small>${g[2] === 'S' ? 'supporting' : 'opposing'} ${esc(g[3])}</small>`, money(g[4])])) : '')}
 ${sec('More', cols([a(P('state', d.st, ST[d.st]), `${ST[d.st] || d.st} in Congress`), a('/elections', 'All 2026 races')]))}
-${note('From FEC candidate summaries and independent expenditure reports.')}`;
+${note('Money from FEC candidate summaries and independent expenditure reports. Results as listed on Wikipedia from state election offices.')}`;
   return { title: title(t), desc: clamp(lead, 158), path: P('race', id, '2026 ' + name), route: 'race:' + id, crumbs: [['2026 elections', L.abs('/elections')], [name, null]],
     ld: [], body }; // no Event markup: an election race is not an event people attend
 }

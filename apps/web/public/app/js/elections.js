@@ -22,6 +22,11 @@ const raceName=r=>r.o==='S'?`${ST[r.st]} Senate${r.sp?' (special)':''}`:`${ST[r.
 const raceShort=r=>r.o==='S'?`${r.st} Senate${r.sp?' special':''}`:`${r.st}-${r.d===0?'AL':r.d}`;
 const pviText=p=>{if(!p)return '';const n=+(p.split('+')[1]||0);if(p[0]==='E'||!n)return 'Evenly split district';return `Leans ${p[0]==='R'?'Republican':'Democratic'} by ${n} pt${n===1?'':'s'}`};
 const pviNum=p=>!p||p[0]==='E'?0:+(p.split('+')[1]||0);
+/* results: r.res is set when a winner is marked (w name, p party, pc share, m margin, flip) */
+const PADJ={D:'Democratic',R:'Republican',L:'Libertarian',G:'Green',I:'Independent'};
+const resShort=r=>{const x=r.res;if(!x)return '';return `${esc(lastName(x.w))} won`+(x.m!=null?` by ${x.m.toFixed(1).replace(/\.0$/,'')} pts`:'')};
+const resTag=r=>r.res?`<span class="rtag p-${['D','R'].includes(r.res.p)?r.res.p:'I'}">${r.res.flip?(PADJ[r.res.p]||'Party')+' gain':(PADJ[r.res.p]||'')+' hold'}</span>`:'';
+function splitOf(R){const t={D:0,R:0,O:0,n:0,flipD:0,flipR:0};R.forEach(r=>{if(!r.res){t.n++;return}const k=r.res.p==='D'||r.res.p==='R'?r.res.p:'O';t[k]++;if(r.res.flip){if(r.res.p==='D')t.flipD++;else if(r.res.p==='R')t.flipR++}});return t}
 function raceFor(m){
   if(!EL.races||!m)return null;
   if(m.chamber==='Senate')return EL.races.find(r=>r.o==='S'&&r.st===m.state&&r.c.some(c=>c.bg===m.id))||null;
@@ -47,14 +52,14 @@ function raceRow(r,sub){
   const faces=lead.map(c=>candFace(c,40)).join('');
   const names=lead.map(c=>esc(lastName(c.n))).join(' <span class="rvs">vs</span> ');
   const line=sub||[raceName(r),pviText(r.pvi)].filter(Boolean).join(' · ');
-  return `<button class="row plain racerow" data-race="${r.id}"><span class="rfaces n${lead.length}">${faces}</span><span style="min-width:0"><span class="t">${names||'Candidates not set'}</span><span class="s">${esc(line)}</span></span><span class="rval"><b>${M(r.ot||0)}</b><small>outside money</small></span>${chev}</button>`;
+  return `<button class="row plain racerow" data-race="${r.id}"><span class="rfaces n${lead.length}">${faces}</span><span style="min-width:0"><span class="t">${names||'Candidates not set'}</span><span class="s">${esc(line)}</span></span>${r.res?`<span class="rval"><b class="p-${['D','R'].includes(r.res.p)?r.res.p:'I'}">${esc(lastName(r.res.w))}</b><small>${r.res.flip?(PADJ[r.res.p]||'')+' gain':'won'}</small></span>`:`<span class="rval"><b>${M(r.ot||0)}</b><small>outside money</small></span>`}${chev}</button>`;
 }
 function featCard(r){
   const lead=leadPair(r);
   const side=c=>`<span class="fside">${candFace(c,58)}<b>${esc(lastName(c.n))}</b><em class="p-${['D','R'].includes(c.p)?c.p:'I'}">${c.p==='D'?'Dem.':c.p==='R'?'Rep.':esc(c.pl||'Ind.')}${c.inc?' · inc.':''}</em></span>`;
   return `<button class="fcard" data-race="${r.id}"><span class="fk">${esc(raceName(r))}</span>
     <span class="fm">${lead.map(side).join(lead.length===2?'<span class="fvs">vs</span>':'')}</span>
-    <span class="ff"><span>${esc(pviText(r.pvi))}</span><b>${M(r.ot||0)} <small>outside</small></b></span></button>`;
+    <span class="ff"><span>${r.res?resShort(r):esc(pviText(r.pvi))}</span>${r.res?resTag(r):`<b>${M(r.ot||0)} <small>outside</small></b>`}</span></button>`;
 }
 const toWatch=n=>EL.races?EL.races.filter(r=>competitive(r)&&leadPair(r).length===2).sort((a,b)=>(b.ot||0)-(a.ot||0)).slice(0,n):[];
 function myRaces(){
@@ -76,9 +81,11 @@ function electionsScreen(){
   const stOpts=Object.entries(ST).filter(([k])=>R.some(r=>r.st===k)).sort((a,b)=>a[1].localeCompare(b[1]));
   const tot=R.reduce((a,r)=>a+(r.rt||0),0),out=R.reduce((a,r)=>a+(r.ot||0),0);
   const authed=typeof signedIn==="function"&&signedIn(),mine=authed?myRaces():[];
+  const hs=splitOf(hou),ss=splitOf(sen),anyRes=R.some(r=>r.res);
   let list;
   if(q)list=R.filter(r=>fz(raceName(r)+' '+raceShort(r)+' '+r.c.map(c=>c.n).join(' '),q));
   else if(mode==='senate')list=sen;
+  else if(mode==='flips')list=R.filter(r=>r.res&&r.res.flip).sort((a,b)=>(b.ot||0)-(a.ot||0));
   else if(mode==='close')list=R.filter(competitive).sort((a,b)=>(b.ot||0)-(a.ot||0));
   else if(mode==='money')list=[...R].sort((a,b)=>(b.rt+(b.ot||0))-(a.rt+(a.ot||0)));
   else if(mode==='state')list=R.filter(r=>r.st===(S.est||S.home||'AL'));
@@ -91,13 +98,19 @@ function electionsScreen(){
     <div class="dstat c-money"><span class="dic">${CAT.money.icon}</span><span class="dk">Raised by candidates</span><b class="dv">${M(tot)}</b><span class="ds">through ${EL.asOf?fmtISO(EL.asOf):'latest filings'}</span></div>
     <div class="dstat c-influence"><span class="dic">${CAT.influence.icon}</span><span class="dk">Outside spending</span><b class="dv">${M(out)}</b><span class="ds">by super PACs and other groups</span></div>
    </div></section>
+   ${anyRes&&!q?`<section class="sec wide"><div class="sh"><h2>The results</h2><button data-emode="flips">Seats that changed party</button></div>
+    <div class="splitgrid">${[['House',hs,hou.length],['Senate seats won this year',ss,sen.length]].map(([t,x,n])=>`<div class="splitcard"><div class="splitk">${t}</div>
+      <div class="splitbar" role="img" aria-label="${x.D} Democratic, ${x.R} Republican, ${x.O} other, ${x.n} not yet marked"><i class="p-D" style="flex:${x.D}"></i><i class="p-O" style="flex:${x.O}"></i><i class="p-R" style="flex:${x.R}"></i><i class="p-N" style="flex:${x.n}"></i></div>
+      <div class="splitrow"><span><b class="p-D">${x.D}</b> Democratic</span>${x.O?`<span><b>${x.O}</b> other</span>`:''}<span><b class="p-R">${x.R}</b> Republican</span></div>
+      <div class="splitsub">${x.flipD+x.flipR?`${x.flipD} flipped to Democrats, ${x.flipR} to Republicans. `:''}${x.n?`${x.n} of ${n} not marked yet.`:'All marked.'}</div></div>`).join('')}</div>
+    <div class="cap">Winners as listed on Wikipedia from state results; sourced to state election offices. Races still being counted or headed to a runoff show no winner yet. Senate totals count only the ${sen.length} seats on the ballot this year.</div></section>`:''}
    ${!q?`<section class="sec wide"><div class="sh"><h2>Races to watch</h2><button data-emode="close">All competitive</button></div><div class="fgrid">${toWatch(8).map(featCard).join('')}</div></section>`:''}
    ${mine.length?`<section class="sec"><div class="sh"><h2>Your races</h2><span class="cap" style="padding:0">${esc(repWhere())}</span></div><div class="group">${mine.map(r=>raceRow(r)).join('')}</div></section>`:authed?`<section class="sec"><div class="calm">Add your ZIP code on the Search page to see your races here.</div></section>`:`<section class="sec"><div class="signin-card"><b>See your races</b><span>Sign in and add your ZIP code to keep your Senate and House races at the top.</span><div><button class="abtn sm" data-auth="up">Create free account</button><button class="link" data-auth="in">Sign in</button></div></div></section>`}
    <section class="sec"><div class="sfield"><input id="eq" class="search" type="search" placeholder="Search a state, district or candidate" value="${esc(S.eq||'')}" aria-label="Search races"></div>
-    <div class="seg" style="margin-top:10px">${[['top','Most outside money'],['close','Competitive'],['senate','Senate'],['money','Most expensive'],['state','By state']].map(([k,l])=>`<button data-emode="${k}" aria-pressed="${mode===k}">${l}</button>`).join('')}</div>
+    <div class="seg" style="margin-top:10px">${[['top','Most outside money'],...(anyRes?[['flips','Changed party']]:[]),['close','Competitive'],['senate','Senate'],['money','Most expensive'],['state','By state']].map(([k,l])=>`<button data-emode="${k}" aria-pressed="${mode===k}">${l}</button>`).join('')}</div>
     ${mode==='state'&&!q?`<select class="select" id="est" aria-label="State" style="margin-top:10px">${stOpts.map(([k,v])=>`<option value="${k}" ${k===(S.est||S.home||'AL')?'selected':''}>${v}</option>`).join('')}</select>`:''}
    </section>
-   <section class="sec wide"><div class="sh"><h2>${q?'Matching races':mode==='close'?'Competitive races':mode==='senate'?'Senate races':mode==='money'?'Most expensive races':mode==='state'?esc(ST[S.est||S.home||'AL']):'Where outside groups are spending most'}</h2><span class="cap" style="padding:0">${list.length}</span></div>
+   <section class="sec wide"><div class="sh"><h2>${q?'Matching races':mode==='flips'?'Seats that changed party':mode==='close'?'Competitive races':mode==='senate'?'Senate races':mode==='money'?'Most expensive races':mode==='state'?esc(ST[S.est||S.home||'AL']):'Where outside groups are spending most'}</h2><span class="cap" style="padding:0">${list.length}</span></div>
     <div class="group biglist">${shown.map(r=>raceRow(r)).join('')||'<div class="empty">No races match.</div>'}</div>
     ${list.length>shown.length?`<button class="more" data-emore>Show more</button>`:''}
     <div class="cap">"Competitive" means the district leans 5 points or less toward one party, or outside groups have spent $2M+. Money figures are what each campaign reported to the Federal Election Commission; outside spending is reported by the groups themselves.</div></section>
@@ -122,6 +135,7 @@ function racePage(id){
       ${m?`<button class="mphoto" data-p="${m.id}" aria-label="${esc(c.n)}">${candFace(c,96)}</button>`:`<div class="mphoto">${candFace(c,96)}</div>`}
       <div class="mname">${esc(c.n)}</div>
       <div class="mparty">${esc(c.pl||PWORD[c.p]||'')}${c.inc?' · Incumbent':''}</div>
+      ${c.win?`<div class="mwon">Won${c.pc!=null?` · ${c.pc}%`:''}</div>`:c.pc!=null?`<div class="mpct">${c.pc}%</div>`:''}
       <div class="mraised"><b>${c.r?M(c.r):'—'}</b><span>raised</span></div>
     </div>`;
   };
@@ -158,10 +172,10 @@ function racePage(id){
   const sub=[r.o==='S'?'U.S. Senate':'U.S. House',pviText(r.pvi)].filter(Boolean).join(' · ');
   return `${pageHead(raceShort(r))}
   <div class="wrap racewrap" style="padding-top:calc(var(--navh) + 14px)">
-   <header class="rhead lbanner bg-capitol"><span class="rkick">${after?'Nov 3, 2026':`Election Day · Nov 3, 2026 · ${daysToElection()} days`}</span><h1>${esc(raceName(r))}</h1><p>${esc(sub)}</p></header>
+   <header class="rhead lbanner bg-capitol"><span class="rkick">${r.res?`${esc(lastName(r.res.w))} won${r.res.flip?' · '+(PADJ[r.res.p]||'')+' gain':''}`:after?'Nov 3, 2026':`Election Day · Nov 3, 2026 · ${daysToElection()} days`}</span><h1>${esc(raceName(r))}</h1><p>${esc(sub)}</p></header>
    <section class="matchup n${lead.length}">${lead.map(side).join(lead.length===2?'<span class="mvs">vs</span>':'')}</section>
    ${rest.length?`<div class="alsoran">Also on the ballot: ${rest.map(c=>`<span>${candDot(c)}${esc(c.n)}${c.pl?` <em>${esc(c.pl)}</em>`:''}</span>`).join('')}</div>`:''}
-   <div class="rstrip"><div><b>${M(r.rt||0)}</b><span>raised by all candidates</span></div><div><b>${M(r.ot||0)}</b><span>outside spending</span></div><div><b>${after?'Counting':'Nov 3'}</b><span>${after?'results as states report':'polls close; results here after'}</span></div></div>
+   <div class="rstrip"><div><b>${M(r.rt||0)}</b><span>raised by all candidates</span></div><div><b>${M(r.ot||0)}</b><span>outside spending</span></div><div><b>${r.res?esc(lastName(r.res.w)):after?'Not marked':'Nov 3'}</b><span>${r.res?(r.res.flip?'won, and the seat changed party':'won'+(r.res.m!=null?' by '+r.res.m.toFixed(1).replace(/\.0$/,'')+' points':'')):after?'no winner listed yet; still counting or in a runoff':'polls close; results here after'}</span></div></div>
    <section class="sec wide"><div class="sh"><h2>The candidates' money</h2></div><div class="ccards">${lead.map(card).join('')}</div></section>
    ${outAll.length?`<section class="sec wide"><div class="sh"><h2>Outside spending</h2><span class="cap" style="padding:0">${M(r.ot||0)}</span></div>
      ${perHtml?`<div class="omgrid">${perHtml}</div>`:''}
@@ -245,7 +259,7 @@ function elHomeBlock(){
   const days=daysToElection();
   const authed=typeof signedIn==="function"&&signedIn(),mine=authed?myRaces():[];
   return `<section class="sec elhome wide"><div class="sh"><h2>2026 elections</h2><button data-go="elections">All races</button></div>
-    <div class="elhomegrid"><button class="elcard" data-go="elections">${days<0?`<span class="elk">Held Nov 3, 2026</span><b>Races</b><span class="eld">and the money</span><span>All 435 House seats and 35 Senate seats were on the ballot. See who ran and who paid for their campaigns.</span>`:`<span class="elk">Election Day · Nov 3</span><b>${days>0?days:'Today'}</b><span class="eld">${days>0?'days to go':''}</span><span>All 435 House seats and 35 Senate seats are on the ballot. See who's running and who's paying for it.</span>`}</button>
+    <div class="elhomegrid"><button class="elcard" data-go="elections">${days<0?`${EL.races&&EL.races.some(r=>r.res)?(()=>{const h=splitOf(EL.races.filter(r=>r.o==='H'));return `<span class="elk">Held Nov 3, 2026</span><b>Results</b><span class="eld">House: ${h.D} Democratic, ${h.R} Republican</span><span>Who won each race, which seats changed party, and the money behind them.</span>`})():`<span class="elk">Held Nov 3, 2026</span><b>Races</b><span class="eld">and the money</span><span>All 435 House seats and 35 Senate seats were on the ballot. See who ran and who paid for their campaigns.</span>`}`:`<span class="elk">Election Day · Nov 3</span><b>${days>0?days:'Today'}</b><span class="eld">${days>0?'days to go':''}</span><span>All 435 House seats and 35 Senate seats are on the ballot. See who's running and who's paying for it.</span>`}</button>
     ${EL.races?toWatch(3).map(featCard).join(''):''}</div>
     ${mine.length?`<div class="group" style="margin-top:10px">${mine.map(r=>raceRow(r,'Your race')).join('')}</div>`:''}</section>`;
 }

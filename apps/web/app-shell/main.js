@@ -30,7 +30,7 @@ SB.all=async(path,size=1000)=>{let out=[],from=0;for(;;){const rows=await SB.get
 SB.rpc=(fn,args)=>fn==='get_light'?SB.get('rpc/get_light?kind='+encodeURIComponent(args.kind)):SB.req('rpc/'+fn,{method:'POST',body:JSON.stringify(args||{})});
 SB.meta=async keys=>Object.fromEntries((await SB.get('app_meta?select=key,value&key=in.('+keys.join(',')+')')).map(r=>[r.key,r.value]));
 
-const APP_VER='202611171300'; /* bump on every release so browsers and the CDN fetch fresh files */
+const APP_VER='202611171404'; /* bump on every release so browsers and the CDN fetch fresh files */
 const APP_SCRIPTS=['fuzzy','core','party','hist','ui','nav','pages','search','leaders','linkify','pacs','elections','companies','friendly','votes','places','extras','glossary_es','es_dict','i18n','db','account','trust','pro','pro2','exec','simple','native','social','desktop','support','routes','a11y','guard'];
 async function boot(){
   const msg=document.getElementById('bootmsg');
