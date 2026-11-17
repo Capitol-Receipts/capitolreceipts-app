@@ -28,7 +28,7 @@ drawerHtml=function(){
   const authed=typeof signedIn==='function'&&signedIn();
   const me=authed?`<button class="ditem big" data-go="following">${NAVI.star}<span>My reps & following</span></button>`
     :`<button class="ditem big" data-auth="in">${NAVI.badge}<span>Sign in</span><em>Free</em></button>`;
-  return smTr(`<div class="dtop"><div class="logo"><span>Capitol</span>Receipts</div><button class="dclose" data-dclose aria-label="Close menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+  return smTr(`<div class="dtop"><div class="logo"><svg class="logo-mark" viewBox="10 12 80 81" aria-hidden="true"><rect x="47" y="14" width="6" height="14" rx="3" fill="#C8323A"/><path d="M24 54 A26 26 0 0 1 76 54 Z" fill="#C8323A"/><rect x="18" y="57" width="64" height="6" rx="2" fill="#C8323A"/><rect x="24" y="66" width="6" height="16" rx="2" fill="#C8323A"/><rect x="38" y="66" width="6" height="16" rx="2" fill="#C8323A"/><rect x="56" y="66" width="6" height="16" rx="2" fill="#C8323A"/><rect x="70" y="66" width="6" height="16" rx="2" fill="#C8323A"/><rect x="12" y="84" width="76" height="7" rx="3" fill="currentColor"/></svg><i class="logo-div" aria-hidden="true"></i>Capitol Receipts</div><button class="dclose" data-dclose aria-label="Close menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
    <button class="dsearch" data-go="search">${NAVI.search}<span>Search people, bills, votes</span></button>
    <div class="dsec">${me}</div>
    ${SM_GROUPS.map(([id,ic,l,items])=>navGroup(id,ic,l,items)).join('')}

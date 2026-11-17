@@ -5,9 +5,9 @@ const CSS = `<style id="sr-css">
 .sr a{color:var(--n);overflow-wrap:break-word}
 .sr-top{background:var(--n);color:#fff}
 .sr-top .in{max-width:980px;margin:0 auto;padding:12px 16px;display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center}
-.sr-logo{font:800 22px "Barlow Condensed",system-ui,sans-serif;color:#fff!important;text-decoration:none;letter-spacing:-.01em;margin-right:auto}
-.sr-logo::before{content:"";display:inline-block;width:1.48em;height:1.4em;margin-right:.36em;vertical-align:-.32em;background:currentColor;-webkit-mask:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%2222%2011%20156%20147%22%3E%3Cpath%20d%3D%22M95%2016a5%205%200%201%200%2010%200a5%205%200%201%200-10%200ZM97%2018h6v16h-6ZM88%2034h24v20H88ZM58%20104C58%2072%2078%2050%20100%2050S142%2072%20142%20104ZM50%20104h100v8H50ZM57%20112h6v26h-6ZM67%20112h6v26h-6ZM77%20112h6v26h-6ZM87%20112h6v26h-6ZM97%20112h6v26h-6ZM107%20112h6v26h-6ZM117%20112h6v26h-6ZM127%20112h6v26h-6ZM137%20112h6v26h-6ZM46%20138h108v8H46ZM22%20146h156v12H22Z%22%2F%3E%3C%2Fsvg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%2222%2011%20156%20147%22%3E%3Cpath%20d%3D%22M95%2016a5%205%200%201%200%2010%200a5%205%200%201%200-10%200ZM97%2018h6v16h-6ZM88%2034h24v20H88ZM58%20104C58%2072%2078%2050%20100%2050S142%2072%20142%20104ZM50%20104h100v8H50ZM57%20112h6v26h-6ZM67%20112h6v26h-6ZM77%20112h6v26h-6ZM87%20112h6v26h-6ZM97%20112h6v26h-6ZM107%20112h6v26h-6ZM117%20112h6v26h-6ZM127%20112h6v26h-6ZM137%20112h6v26h-6ZM46%20138h108v8H46ZM22%20146h156v12H22Z%22%2F%3E%3C%2Fsvg%3E") center/contain no-repeat}
-.sr-logo span{background:var(--r);padding:1px 7px 2px;border-radius:5px;margin-right:3px}
+@font-face{font-family:'CR Logo';src:url(/app/fonts/figtree-logo.woff2) format('woff2');font-weight:800;font-display:swap}
+.sr-logo{font:800 22px 'CR Logo',"Barlow Condensed",system-ui,sans-serif;color:#fff!important;text-decoration:none;letter-spacing:-.01em;margin-right:auto;display:inline-flex;align-items:center}
+.sr-logo .logo-mark{width:1.25em;height:1.25em;flex:none;margin-right:.4em}.sr-logo .logo-div{display:inline-block;width:1.5px;height:1.05em;background:currentColor;opacity:.3;margin-right:.45em}
 .sr-top nav a{color:#dfe5f1;text-decoration:none;font-weight:600;font-size:14px;display:inline-block;padding:6px 0}
 .sr-top nav a:hover{color:#fff;text-decoration:underline}
 .sr-main{max-width:980px;margin:0 auto;padding:16px 16px 48px}

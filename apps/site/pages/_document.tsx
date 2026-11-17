@@ -7,7 +7,10 @@ const FIRST_TOUCH = "(function(){try{var C='cr_ft',d=document;if(d.cookie.split(
 export default function Document() {
   return (
     <Html lang="en">
-      <Head />
+      <Head>
+        {/* The logo's lettering (Figtree 800), only the letters in "Capitol Receipts". */}
+        <style dangerouslySetInnerHTML={{ __html: "@font-face{font-family:'CR Logo';src:url(/fonts/figtree-logo.woff2) format('woff2');font-weight:800;font-display:swap}" }} />
+      </Head>
       <body>
         <Main />
         <NextScript />

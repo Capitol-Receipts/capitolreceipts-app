@@ -69,7 +69,7 @@ export default function AppPage({ kind, title, desc, url, ogTitle, ogDesc, image
       <div id="app">
         {kind === 'record' && m ? <SeoFrame m={m} /> : (
           <div className="boot"><div>
-            <b><span>Capitol</span>Receipts</b>
+            <b className="logo"><svg className="logo-mark" viewBox="10 12 80 81" aria-hidden="true"><rect x="47" y="14" width="6" height="14" rx="3" fill="#C8323A"/><path d="M24 54 A26 26 0 0 1 76 54 Z" fill="#C8323A"/><rect x="18" y="57" width="64" height="6" rx="2" fill="#C8323A"/><rect x="24" y="66" width="6" height="16" rx="2" fill="#C8323A"/><rect x="38" y="66" width="6" height="16" rx="2" fill="#C8323A"/><rect x="56" y="66" width="6" height="16" rx="2" fill="#C8323A"/><rect x="70" y="66" width="6" height="16" rx="2" fill="#C8323A"/><rect x="12" y="84" width="76" height="7" rx="3" fill="currentColor"/></svg><i className="logo-div" aria-hidden="true" />Capitol Receipts</b>
             <p id="bootmsg">Loading the latest records…</p>
             <p style={{ fontSize: '13px', marginTop: '18px' }}><a href="/members">Members</a> · <a href="/bills">Bills</a> · <a href="/pacs">PACs</a> · <a href="/lobbying">Lobbying</a> · <a href="/elections">2026 races</a> · <a href="/states">States</a></p>
           </div></div>

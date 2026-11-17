@@ -159,7 +159,7 @@ function home(){
   const bills=Object.entries(DATA.bills).sort((a,b)=>b[1].n-a[1].n).slice(0,5);
   const feed=FEEDTOP.slice(0,6);
   return `<div class="wrap home">
-   <div class="homehero bg-capfull"><header class="brandbar"><div class="logo"><span>Capitol</span>Receipts</div><span class="asof">Updated ${fmtISO(lastUpdated())}</span></header>
+   <div class="homehero bg-capfull"><header class="brandbar"><div class="logo"><svg class="logo-mark" viewBox="10 12 80 81" aria-hidden="true"><rect x="47" y="14" width="6" height="14" rx="3" fill="#C8323A"/><path d="M24 54 A26 26 0 0 1 76 54 Z" fill="#C8323A"/><rect x="18" y="57" width="64" height="6" rx="2" fill="#C8323A"/><rect x="24" y="66" width="6" height="16" rx="2" fill="#C8323A"/><rect x="38" y="66" width="6" height="16" rx="2" fill="#C8323A"/><rect x="56" y="66" width="6" height="16" rx="2" fill="#C8323A"/><rect x="70" y="66" width="6" height="16" rx="2" fill="#C8323A"/><rect x="12" y="84" width="76" height="7" rx="3" fill="currentColor"/></svg><i class="logo-div" aria-hidden="true"></i>Capitol Receipts</div><span class="asof">Updated ${fmtISO(lastUpdated())}</span></header>
    <h1 class="hello">Who's in Congress, who pays them, and how they vote.</h1><button class="langbtn notr" data-lang="${S.lang==='es'?'en':'es'}">${S.lang==='es'?'English':'Español'}</button></div>
    <button class="fakesearch" data-tab="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>Search any lawmaker, bill or group</button>
    ${dashStats()}
